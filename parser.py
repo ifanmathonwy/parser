@@ -2,7 +2,6 @@
 
 Heavily based on Jurafsky and Martin. Great book."""
 
-
 class Rule:
     """A rule in a context-free grammar."""
 
@@ -63,6 +62,16 @@ class State:
         else:
             return ''
 
+    def __eq__(self, other):
+        return (self.rule == other.rule and
+                self.span_start == other.span_start and
+                self.span_stop == other.span_stop and
+                self.dot_position == other.dot_position and
+                self.previous_states == other.previous_states)
+
+    def __ne__(self, other):
+        return not self == other
+
     def __repr__(self):
         return '{} -> {}.{}, [{}, {}]'.format(self.rule.lhs,
                                               ' '.join(self.rule.rhs[:self.dot_position]),
@@ -88,7 +97,8 @@ class Chart:
 
     def enqueue(self, state, position):
         """Add a state to the given position in the Chart."""
-        self._chart[position].append(state)
+        if state not in self._chart[position]:
+            self._chart[position].append(state)
 
     def _create_queue(self):
         return []
