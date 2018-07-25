@@ -27,8 +27,6 @@ class State:
     def __init__(self, rule, span_start, span_stop, dot_position, previous_states=None):
         """Initializer for the State class.
 
-        TODO: Can get span_stop as span_start + dot_position. Silly to specify them both separately.
-
         Args:
             rule (Rule): A rule whose progress in the parse is being tracked by the State.
             span_start (int): The beginning of the input span for which the constituent predicted by the State should
@@ -148,7 +146,6 @@ class Parser:
                 rule.preterminal)
 
     def _scan(self, state, chart):
-        # TODO Check that state is not complete.
         for rule in self._grammar:
             if self._is_applicable_preterminal(rule, state, chart):
                 chart.enqueue(
@@ -219,23 +216,3 @@ class Parser:
                     self._complete(state, chart)
 
         return [self._tree_from_parse(p) for p in self._full_parses(chart)]
-
-
-def main():
-    # Maybe replace "preterminal" with "lexicon"?
-    GRAMMAR = [
-        Rule('S', ['VP']),
-        Rule('VP', ['V', 'NP']),
-        Rule('NP', ['Det', 'Nominal']),
-        Rule('Det', ['that'], preterminal=True),
-        Rule('Nominal', ['flight'], preterminal=True),
-        Rule('V', ['Book'], preterminal=True)
-    ]
-
-    words = ['Book', 'that', 'flight']
-    parser = Parser(GRAMMAR)
-    print(parser.parse(words))
-
-
-if __name__ == '__main__':
-    main()
