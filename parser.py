@@ -68,156 +68,110 @@ class Chart:
     def __iter__(self):
         return iter(self._chart)
 
+class Parser:
+    def __init__(self, grammar):
+        self._grammar = grammar
 
-# Maybe replace "preterminal" with "lexicon"?
-GRAMMAR = [
-    Rule('S', ['VP']),
-    Rule('VP', ['V', 'NP']),
-    Rule('NP', ['Det', 'Nominal']),
-    Rule('Det', ['that'], preterminal=True),
-    Rule('Nominal', ['flight'], preterminal=True),
-    Rule('V', ['Book'], preterminal=True)
-]
+    def _grammar_rules_for(self, lhs):
+        for rule in self._grammar:
+            if lhs == rule.lhs:
+                yield rule
 
-def grammar_rules_for(lhs, grammar):
-    for rule in grammar:
-        if lhs == rule.lhs:
-            yield rule
+    def _predict(self, state, chart):
+        # Check that state is not complete.
+        for rule in self._grammar_rules_for(state.next_category):
+            if not rule.preterminal:
+                chart.enqueue(State(rule=rule,
+                                    span_start=state.span_stop,
+                                    span_stop=state.span_stop,
+                                    dot_position=0),
+                              state.span_stop)
 
-def predict(state, chart):
-    # Check that state is not complete.
-    for rule in grammar_rules_for(state.next_category, GRAMMAR):
-        if not rule.preterminal:
-            chart.enqueue(State(rule=rule,
-                                span_start=state.span_stop,
-                                span_stop=state.span_stop,
-                                dot_position=0),
-                          state.span_stop)
+    def _is_applicable_preterminal(self, rule, state, chart):
+        return (rule.lhs == state.next_category and
+                ''.join(rule.rhs) == chart.sentence[state.span_stop] and
+                rule.preterminal)
 
-def is_applicable_preterminal(rule, state, chart):
-    return (rule.lhs == state.next_category and
-            ''.join(rule.rhs) == chart.sentence[state.span_stop] and
-            rule.preterminal)
+    def _scan(self, state, chart):
+        # TODO Check that state is not complete.
+        for rule in self._grammar:
+            if self._is_applicable_preterminal(rule, state, chart):
+                chart.enqueue(
+                    State(rule=rule,
+                          span_start=state.span_stop,
+                          span_stop=state.span_stop + 1,
+                          dot_position=1),
+                    state.span_stop + 1
+                )
 
-def scan(state, chart):
-    # Check that state is not complete.
-    for rule in GRAMMAR:
-        if is_applicable_preterminal(rule, state, chart):
-            chart.enqueue(
-                State(rule=rule,
-                      span_start=state.span_stop,
-                      span_stop=state.span_stop + 1,
-                      dot_position=1),
-                state.span_stop + 1
-            )
+    def _complete(self, state, chart):
+        """Given a completed state, looks for all rules in the grammar 'waiting' for that state to get completed."""
+        # Check that state is complete.
+        for candidate_state in chart[state.span_start]:
+            if (candidate_state.next_category == state.rule.lhs) and (candidate_state.span_stop == state.span_start):
+                chart.enqueue(
+                    State(
+                        rule=candidate_state.rule,
+                        span_start=candidate_state.span_start,
+                        span_stop=state.span_stop,
+                        dot_position=candidate_state.dot_position + 1,
+                        previous_states=candidate_state.previous_states + [state]
+                    ),
+                    state.span_stop
+                )
 
-def complete(state, chart):
-    """Given a completed state, looks for all rules in the grammar 'waiting' for that state to get completed."""
-    # Check that state is complete.
-    for candidate_state in chart[state.span_start]:
-        if (candidate_state.next_category == state.rule.lhs) and (candidate_state.span_stop == state.span_start):
-            chart.enqueue(
-                State(
-                    rule=candidate_state.rule,
-                    span_start=candidate_state.span_start,
-                    span_stop=state.span_stop,
-                    dot_position=candidate_state.dot_position + 1,
-                    previous_states=candidate_state.previous_states + [state]
-                ),
-                state.span_stop
-            )
+    def _tree_from_parse(self, state):
+        if state.rule.preterminal:
+            return [state.rule.lhs, ''.join(state.rule.rhs)]
+        tree = []
+        tree.append(state.rule.lhs)
+        for contributor in sorted(state.previous_states, key=lambda s: s.span_start):
+            tree.append(self._tree_from_parse(contributor))
+        return tree
 
+    def _full_parses(self, chart):
+        parses = []
+        for state in chart[len(chart) - 1]:
+            if not state.incomplete and state.rule.lhs == 'GAMMA':
+                parses.append(state)
+        return parses
 
-def trace(state):
-    print(state)
-    for previous_state in state.previous_states:
-        trace(previous_state)
-    # Figure out a function for returning a parse tree object using this trace.
-    # Tree object of the form ['S' ['VP' ['V' 'book'] ['NP' ['Det' 'these'] ['Nominal' 'flights']]]]
+    def parse(self, words):
+        chart = Chart(words)
+        chart.enqueue(
+            State(
+                rule=Rule('GAMMA', ['S']),
+                span_start=0,
+                span_stop=0,
+                dot_position=0
+            ),
+            0
+        )
+        for i in range(len(words) + 1):
+            for state in chart[i]:
+                if state.incomplete:
+                    self._predict(state, chart)
+                    self._scan(state, chart)
+                else:
+                    self._complete(state, chart)
 
-def full_parses(chart):
-    parses = []
-    for state in chart[len(chart)-1]:
-        if not state.incomplete and state.rule.lhs == 'GAMMA':
-            parses.append(state)
-
-    for parse in parses:
-        print('****************************')
-        trace(parse)
-        print('****************************')
-        print(tree_from_parse(parse))
-
-
-def tree_from_parse(state):
-    if state.rule.preterminal:
-        return [state.rule.lhs, ''.join(state.rule.rhs)]
-    tree = []
-    tree.append(state.rule.lhs)
-    for contributor in sorted(state.previous_states, key=lambda s: s.span_start):
-        tree.append(tree_from_parse(contributor))
-    return tree
-
-def parse(words, grammar):
-    chart = Chart(words)
-    chart.enqueue(
-        State(
-            rule=Rule('GAMMA', ['S']),
-            span_start=0,
-            span_stop=0,
-            dot_position=0
-        ),
-        0
-    )
-    for i in range(len(words) + 1):
-        for state in chart[i]:
-            if state.incomplete:
-                predict(state, chart)
-                scan(state, chart)
-            else:
-                complete(state, chart)
-    full_parses(chart)
-
-
-def test_complete():
-    chart = Chart(['Book', 'these', 'flights'])
-    state = State(rule=Rule('V', ['Book']), span_start=0, span_stop=1, dot_position=1)
-    chart[0].append(
-        State(Rule('VP', ['V', 'NP']), 0, 0, 0)
-    )
-    complete(state, chart)
-    print(chart._chart)
-
-
-def test_predict():
-    chart = Chart(['Book', 'these', 'flights'])
-    state = State(Rule('S', ['VP']), span_start=0, span_stop=0, dot_position=0)
-    predict(state, chart)
-    print(chart._chart)
-
-def test_scan():
-    chart = Chart(['Book', 'these', 'flights'])
-    state = State(Rule('VP', ['V', 'NP'], preterminal=True), span_start=0, span_stop=0, dot_position=0)
-    scan(state, chart)
-    print(chart._chart)
-
+        return [self._tree_from_parse(p) for p in self._full_parses(chart)]
 
 def main():
+    # Maybe replace "preterminal" with "lexicon"?
+    GRAMMAR = [
+        Rule('S', ['VP']),
+        Rule('VP', ['V', 'NP']),
+        Rule('NP', ['Det', 'Nominal']),
+        Rule('Det', ['that'], preterminal=True),
+        Rule('Nominal', ['flight'], preterminal=True),
+        Rule('V', ['Book'], preterminal=True)
+    ]
+
     words = ['Book', 'that', 'flight']
-    parse(words, GRAMMAR)
-    # chart = Chart(['Book', 'these', 'flights'])
-    # print(len(chart))
-    # print(chart._chart)
-    # assert(chart[0] is not chart[1])
-    # r = Rule('S', ['NP', 'VP'])
-    # print(r)
-    # s = State(rule=r,
-    #           span_start=0,
-    #           span_stop=0,
-    #           dot_position=0)
-    # print(s)
-    # test_predict()
-    # test_scan()
-    # test_complete()
+    parser = Parser(GRAMMAR)
+    print(parser.parse(words))
+
 
 
 if __name__ == '__main__':
