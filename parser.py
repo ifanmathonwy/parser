@@ -42,7 +42,6 @@ class State:
                                               self.span_start,
                                               self.span_stop)
 
-
 class ChartIndexError(IndexError):
     pass
 
@@ -70,6 +69,7 @@ class Chart:
         return iter(self._chart)
 
 
+# Maybe replace "preterminal" with "lexicon"?
 GRAMMAR = [
     Rule('S', ['VP']),
     Rule('VP', ['V', 'NP']),
@@ -133,6 +133,7 @@ def trace(state):
     for previous_state in state.previous_states:
         trace(previous_state)
     # Figure out a function for returning a parse tree object using this trace.
+    # Tree object of the form ['S' ['VP' ['V' 'book'] ['NP' ['Det' 'these'] ['Nominal' 'flights']]]]
 
 def full_parses(chart):
     parses = []
@@ -144,7 +145,17 @@ def full_parses(chart):
         print('****************************')
         trace(parse)
         print('****************************')
+        print(tree_from_parse(parse))
 
+
+def tree_from_parse(state):
+    if state.rule.preterminal:
+        return [state.rule.lhs, ''.join(state.rule.rhs)]
+    tree = []
+    tree.append(state.rule.lhs)
+    for contributor in sorted(state.previous_states, key=lambda s: s.span_start):
+        tree.append(tree_from_parse(contributor))
+    return tree
 
 def parse(words, grammar):
     chart = Chart(words)
