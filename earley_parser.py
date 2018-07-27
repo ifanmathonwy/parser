@@ -1,6 +1,16 @@
-"""A library implementing the Earley parser.
+"""A library implementing parsers.
 
+TODO: Incomplete to complete (positive condition)
+TODO: Load grammar from standardized file.
+TODO: Print tree.
+TODO: Create a Grammar class to encapsulate both Rules and the distinguished symbol.
+TODO: Disallow GAMMA in user-defined rules.
+TODO: CKY (move the earley-specific stuff to a separate file).
+
+Currently implements the Earley parser.
 Heavily based on Jurafsky and Martin. Great book."""
+
+_GAMMA = '_GAMMA'
 
 class Rule:
     """A rule in a context-free grammar."""
@@ -9,15 +19,19 @@ class Rule:
         """Initializer for the Rule class.
 
         Args:
-            lhs (string): The label for the left-hand side of the production rule.
-            rhs (list<string>): The labels of the children of the production rule.
-            preterminal (bool): Does this production bottom-out at a single terminal, i.e. a lexicon entry?
+            lhs (string): The label for the left-hand side of the production
+                rule.
+            rhs (list<string>): The labels of the children of the production
+                rule.
+            preterminal (bool): Does this production bottom-out at a single
+                terminal, i.e. a lexicon entry?
         """
         self.lhs = lhs
         self.rhs = rhs
         self.preterminal = preterminal
 
     def __repr__(self):
+        # TODO change to proper repr when done debugging.
         return '{} -> {}'.format(self.lhs, ' '.join(self.rhs))
 
 
@@ -28,15 +42,17 @@ class State:
         """Initializer for the State class.
 
         Args:
-            rule (Rule): A rule whose progress in the parse is being tracked by the State.
-            span_start (int): The beginning of the input span for which the constituent predicted by the State should
-              apply.
-            span_stop (int): The end index of the input span for which the constituent predicted by the State should
-              apply.
-            dot_position (int): The index representing the progress through the constituent predicted by the State. It
-              indexes interstices, starting from 0.
-            previous_states (list<State>): A list of States which allowed the progress through the current State to
-             advance.
+            rule (Rule): A rule whose progress in the parse is being tracked
+                by the State.
+            span_start (int): The beginning of the input span for which the
+                constituent predicted by the State should apply.
+            span_stop (int): The end index of the input span for which the
+                constituent predicted by the State should apply.
+            dot_position (int): The index representing the progress through
+                the constituent predicted by the State. It indexes interstices,
+                starting from 0.
+            previous_states (list<State>): A list of States which allowed the
+                progress through the current State to advance.
         """
         self.rule = rule
         self.span_start = span_start
@@ -71,30 +87,33 @@ class State:
         return not self == other
 
     def __repr__(self):
-        return '{} -> {}.{}, [{}, {}]'.format(self.rule.lhs,
-                                              ' '.join(self.rule.rhs[:self.dot_position]),
-                                              ' '.join(self.rule.rhs[self.dot_position:]),
-                                              self.span_start,
-                                              self.span_stop)
+        # TODO change to proper repr when done debugging.
+        return '{} -> {} . {}, [{}, {}]'.format(self.rule.lhs,
+                                                ' '.join(self.rule.rhs[:self.dot_position]),
+                                                ' '.join(self.rule.rhs[self.dot_position:]),
+                                                self.span_start,
+                                                self.span_stop)
 
-class ChartIndexError(IndexError):
+
+class EarleyChartIndexError(IndexError):
     pass
 
 
-class Chart:
-    """A chart detailing full and partial Earley parses for a given sequence of words and a grammar."""
+class EarleyChart:
+    """Details full and partial Earley parses for a sequence of words and a grammar."""
 
     def __init__(self, sentence):
-        """Initializer for the Chart class.
+        """Initializer for the EarleyChart class.
 
         Args:
-            sentence (list<string>): A list of words representing the object to be parsed.
+            sentence (list<string>): A list of words representing the object
+                to be parsed.
         """
         self.sentence = sentence
         self._chart = [self._create_queue() for _ in range(len(sentence) + 1)]
 
     def enqueue(self, state, position):
-        """Add a state to the given position in the Chart."""
+        """Add a state to the given position in the EarleyChart."""
         if state not in self._chart[position]:
             self._chart[position].append(state)
 
@@ -105,7 +124,7 @@ class Chart:
         try:
             return self._chart[index]
         except IndexError:
-            raise ChartIndexError('Index out of range.')
+            raise EarleyChartIndexError('Index out of range.')
 
     def __len__(self):
         return len(self._chart)
@@ -114,16 +133,18 @@ class Chart:
         return iter(self._chart)
 
 
-class Parser:
-    """An Earley Parser."""
+class EarleyAlgorithm:
+    """The Earley algorithm."""
 
-    def __init__(self, grammar):
-        """Initializer for the Parser class.
+    def __init__(self, grammar, distinguished_symbol='S'):
+        """Initializer for the EarleyAlgorithm class.
 
         Args:
-            grammar (list<Rule>): A list of grammar Rules to be used to parse inputs.
+            grammar (list<Rule>): A list of grammar Rules to be used to parse
+                inputs.
         """
         self._grammar = grammar
+        self._distinguished_symbol = distinguished_symbol
 
     def _grammar_rules_for(self, lhs):
         for rule in self._grammar:
@@ -131,7 +152,6 @@ class Parser:
                 yield rule
 
     def _predict(self, state, chart):
-        # Check that state is not complete.
         for rule in self._grammar_rules_for(state.next_category):
             if not rule.preterminal:
                 chart.enqueue(State(rule=rule,
@@ -141,9 +161,10 @@ class Parser:
                               state.span_stop)
 
     def _is_applicable_preterminal(self, rule, state, chart):
-        return (rule.lhs == state.next_category and
-                ''.join(rule.rhs) == chart.sentence[state.span_stop] and
-                rule.preterminal)
+        if state.span_stop >= len(chart.sentence):
+            return False
+        return (rule.preterminal and rule.lhs == state.next_category and
+                ''.join(rule.rhs) == chart.sentence[state.span_stop])
 
     def _scan(self, state, chart):
         for rule in self._grammar:
@@ -157,8 +178,7 @@ class Parser:
                 )
 
     def _complete(self, state, chart):
-        """Given a completed state, looks for all rules in the grammar 'waiting' for that state to get completed."""
-        # Check that state is complete.
+        """Given completed state, updates all rules in the grammar awaiting its completion."""
         for candidate_state in chart[state.span_start]:
             if (candidate_state.next_category == state.rule.lhs) and (candidate_state.span_stop == state.span_start):
                 chart.enqueue(
@@ -184,7 +204,7 @@ class Parser:
     def _full_parses(self, chart):
         parses = []
         for state in chart[len(chart) - 1]:
-            if not state.incomplete and state.rule.lhs == 'GAMMA':
+            if not state.incomplete and state.rule.lhs == _GAMMA:
                 parses.append(state)
         return parses
 
@@ -195,12 +215,13 @@ class Parser:
             words (list<string>): The sequence of words to be parsed.
 
         Returns:
-            A list of parse trees valid for the given input sequence, or [] if no valid parse.
+            A list of parse trees valid for the given input sequence, or [] if
+                no valid parse.
         """
-        chart = Chart(words)
+        chart = EarleyChart(words)
         chart.enqueue(
             State(
-                rule=Rule('GAMMA', ['S']),
+                rule=Rule(_GAMMA, [self._distinguished_symbol]),
                 span_start=0,
                 span_stop=0,
                 dot_position=0
@@ -215,4 +236,32 @@ class Parser:
                 else:
                     self._complete(state, chart)
 
-        return [self._tree_from_parse(p) for p in self._full_parses(chart)]
+        return [self._tree_from_parse(p)[1] for p in self._full_parses(chart)]
+
+
+# Decouple the algorithms from the public parser objects.
+# Allow initializing parser from a file.
+# Have a parser class which either does Earley or CKY depending on what you ask.
+class EarleyParser:
+    """An Earley parser."""
+
+    def __init__(self, grammar, distinguished_symbol='S'):
+        """Initializer for the EarleyParser class.
+
+        Args:
+            grammar (list<Rule>): A list of grammar Rules to be used to parse
+                inputs.
+        """
+        self._algorithm = EarleyAlgorithm(grammar, distinguished_symbol)
+
+    def parse(self, words):
+        """Parses a sequence of words.
+
+        Args:
+            words (list<string>): The sequence of words to be parsed.
+
+        Returns:
+            A list of parse trees valid for the given input sequence, or [] if
+                no valid parse.
+        """
+        return self._algorithm.parse(words)

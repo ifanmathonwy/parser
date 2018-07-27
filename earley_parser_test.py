@@ -35,7 +35,7 @@ class TestState(unittest.TestCase):
         self.assertEqual(state.next_category, '')
 
 
-class TestParser(unittest.TestCase):
+class TestEarleyParser(unittest.TestCase):
 
     def test_parse(self):
         grammar = [
@@ -49,11 +49,11 @@ class TestParser(unittest.TestCase):
 
         words = ['Book', 'that', 'flight']
 
-        parser = psr.Parser(grammar)
+        parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
 
         self.assertEqual(trees,
-                         [['GAMMA', ['S', ['VP', ['V', 'Book'], ['NP', ['Det', 'that'], ['Nominal', 'flight']]]]]])
+                         [['S', ['VP', ['V', 'Book'], ['NP', ['Det', 'that'], ['Nominal', 'flight']]]]])
 
     def test_multiple_parses(self):
         grammar = [
@@ -66,12 +66,50 @@ class TestParser(unittest.TestCase):
             psr.Rule('S', ['N', 'V', 'N', 'N'])
         ]
         words = ['I', 'made', 'her', 'duck']
-        parser = psr.Parser(grammar)
+        parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
         self.assertEqual(len(trees), 2)
         self.assertEqual(trees, [
-            ['GAMMA', ['S', ['N', 'I'], ['V', 'made'], ['N', 'her'], ['V', 'duck']]],
-            ['GAMMA', ['S', ['N', 'I'], ['V', 'made'], ['N', 'her'], ['N', 'duck']]]
+            ['S', ['N', 'I'], ['V', 'made'], ['N', 'her'], ['V', 'duck']],
+            ['S', ['N', 'I'], ['V', 'made'], ['N', 'her'], ['N', 'duck']]
+        ])
+
+    def test_ambiguity(self):
+        grammar = [
+            psr.Rule('S', ['NP', 'VP']),
+            psr.Rule('NP', ['Det', 'Nominal']),
+            psr.Rule('NP', ['Det', 'Nominal', 'PP']),
+            psr.Rule('NP', ['Nominal']),
+            psr.Rule('VP', ['VP', 'PP']),
+            psr.Rule('VP', ['V', 'NP']),
+            psr.Rule('PP', ['Prep', 'NP']),
+            psr.Rule('Det', ['a'], preterminal=True),
+            psr.Rule('Nominal', ['I'], preterminal=True),
+            psr.Rule('Nominal', ['man'], preterminal=True),
+            psr.Rule('Nominal', ['telescope'], preterminal=True),
+            psr.Rule('V', ['saw'], preterminal=True),
+            psr.Rule('Prep', ['with'], preterminal=True)
+        ]
+        words = ['I', 'saw', 'a', 'man', 'with', 'a', 'telescope']
+        parser = psr.EarleyParser(grammar)
+        trees = parser.parse(words)
+        self.assertEqual(len(trees), 2)
+        self.assertEqual(trees, [
+            # ... saw ... with a telescope
+            ['S', ['NP', ['Nominal', 'I']],
+                  ['VP', ['VP', ['V', 'saw'], ['NP', ['Det', 'a'], ['Nominal', 'man']]],
+                         ['PP', ['Prep', 'with'], ['NP', ['Det', 'a'], ['Nominal', 'telescope']]
+                         ]
+                  ]
+            ],
+            # ... man with a telescope
+            ['S', ['NP', ['Nominal', 'I']],
+                  ['VP', ['V', 'saw'],
+                         ['NP', ['Det', 'a'], ['Nominal', 'man'],
+                                ['PP', ['Prep', 'with'], ['NP', ['Det', 'a'], ['Nominal', 'telescope']]]
+                         ]
+                  ]
+            ]
         ])
 
     def test_no_parses(self):
@@ -79,7 +117,7 @@ class TestParser(unittest.TestCase):
             psr.Rule('N', ['Nothing'], preterminal=True)
         ]
         words = ['Something']
-        parser = psr.Parser(grammar)
+        parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
         self.assertEqual(len(trees), 0)
         self.assertEqual(trees, [])
@@ -87,7 +125,7 @@ class TestParser(unittest.TestCase):
     def test_empty_grammar(self):
         grammar = []
         words = ['Something']
-        parser = psr.Parser(grammar)
+        parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
         self.assertEqual(len(trees), 0)
         self.assertEqual(trees, [])
@@ -97,8 +135,7 @@ class TestParser(unittest.TestCase):
             psr.Rule('N', ['Nothing'], preterminal=True)
         ]
         words = []
-        parser = psr.Parser(grammar)
+        parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
         self.assertEqual(len(trees), 0)
         self.assertEqual(trees, [])
-
