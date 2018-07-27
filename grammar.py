@@ -1,9 +1,12 @@
 """Grammars and rules."""
 
+import re
+
+
 class Rule:
     """A rule in a context-free grammar."""
 
-    def __init__(self, lhs, rhs, preterminal=False):
+    def __init__(self, lhs, rhs, preterminal=False, probability=1.0):
         """Initializer for the Rule class.
 
         Args:
@@ -17,6 +20,7 @@ class Rule:
         self.lhs = lhs
         self.rhs = rhs
         self.preterminal = preterminal
+        self.probability = probability
 
     def __repr__(self):
         # TODO change to proper repr when done debugging.
@@ -51,8 +55,8 @@ class Grammar:
         self._grammar.append(rule)
 
     @classmethod
-    def from_tsv(cls, path):
-        raise NotImplementedError('Creating a Grammar from TSV is not yet implemented.')
+    def from_csv(cls, path):
+        raise NotImplementedError('Creating a Grammar from CSV is not yet implemented.')
 
     def __iter__(self):
         return iter(self._grammar)
@@ -66,3 +70,17 @@ class Grammar:
     @property
     def distinguished_symbol(self):
         return self._distinguished_symbol
+
+class Regex:
+    "A regex which can function as a matcher for a rhs preterminal label."
+
+    def __init__(self, regex):
+        self._regex = re.compile(regex)
+
+    def __eq__(self, other):
+        if self._regex.match(other):
+            return True
+        return False
+
+    def __ne__(self, other):
+        return not self.__class__.__eq__(self, other)

@@ -21,3 +21,9 @@ class TestGrammar(unittest.TestCase):
         self.assertIn(gmr.Rule('VP', ['V']), grammar)
         self.assertIn(gmr.Rule('V', ['initialize'], preterminal=True), grammar)
         self.assertEqual(3, len(grammar))
+
+class TestRegex(unittest.TestCase):
+
+    def test_equality(self):
+        reg = gmr.Regex(r'hello')
+        self.assertEqual('hello', reg)

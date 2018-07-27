@@ -24,6 +24,8 @@ Example usage:
 This implementation is based on the description of the algorithm given in
 'Speech and Language Processing, 2nd Edition' by D. Jurafsky and
 J. H. Martin (2009).
+
+TODO: Allow specifying a regex for terminals.
 """
 
 from grammar import Rule
@@ -161,7 +163,7 @@ class EarleyAlgorithm:
         if state.span_stop >= len(chart.sentence):
             return False
         return (rule.preterminal and rule.lhs == state.next_category and
-                ''.join(rule.rhs) == chart.sentence[state.span_stop])
+                rule.rhs[0] == chart.sentence[state.span_stop])
 
     def _scan(self, state, chart):
         for rule in self._grammar:
@@ -190,13 +192,13 @@ class EarleyAlgorithm:
                     state.span_stop
                 )
 
-    def _tree_from_parse(self, state):
+    def _tree_from_parse(self, state, chart):
         if state.rule.preterminal:
-            return [state.rule.lhs, ''.join(state.rule.rhs)]
+            return [state.rule.lhs, chart.sentence[state.span_start]]
         tree = []
         tree.append(state.rule.lhs)
         for contributor in sorted(state.previous_states, key=lambda s: s.span_start):
-            tree.append(self._tree_from_parse(contributor))
+            tree.append(self._tree_from_parse(contributor, chart))
         return tree
 
     def _full_parses(self, chart):
@@ -234,7 +236,21 @@ class EarleyAlgorithm:
                 else:
                     self._complete(state, chart)
 
-        return [self._tree_from_parse(p)[1] for p in self._full_parses(chart)]
+        return [self._tree_from_parse(p, chart)[1] for p in self._full_parses(chart)]
+
+
+# class ProbabilisticEarleyAlgorithm(EarleyAlgorithm):
+#
+#     def _tree_from_parse(self, state):
+#         if state.rule.preterminal:
+#             return (state.rule.probability, [state.rule.lhs, ''.join(state.rule.rhs)])
+#         probability = 1.0
+#         tree = []
+#         tree.append(state.rule.lhs)
+#         for contributor in sorted(state.previous_states, key=lambda s: s.span_start):
+#             probability *= contributor.rule.probability
+#             tree.append(self._tree_from_parse(contributor)[1])
+#         return (probability, tree)
 
 
 class EarleyParser:

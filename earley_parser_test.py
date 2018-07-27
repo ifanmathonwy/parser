@@ -140,3 +140,33 @@ class TestEarleyParser(unittest.TestCase):
         trees = parser.parse(words)
         self.assertEqual(len(trees), 0)
         self.assertEqual(trees, [])
+
+    def test_regex_rule(self):
+        grammar = gmr.Grammar(
+            gmr.Rule('S', [gmr.Regex(r'[a-z]')], preterminal=True)
+        )
+        words = ['hello']
+        parser = psr.EarleyParser(grammar)
+        trees = parser.parse(words)
+        self.assertEqual(1, len(trees))
+        self.assertEqual([['S', 'hello']], trees)
+
+    def test_programming_language_parsing(self):
+        grammar = gmr.Grammar(
+            gmr.Rule('program', ['variable', 'operator', 'value']),
+            gmr.Rule('variable', [gmr.Regex(r'x')], preterminal=True),
+            gmr.Rule('operator', [gmr.Regex(r'[+\-=*/]')], preterminal=True),
+            gmr.Rule('value', [gmr.Regex(r'\d+')], preterminal=True),
+            distinguished_symbol='program'
+        )
+        words = ['x', '=', '599993949']
+        parser = psr.EarleyParser(grammar)
+        trees = parser.parse(words)
+        self.assertEqual([['program',
+                               ['variable', 'x'],
+                               ['operator', '='],
+                               ['value', '599993949']
+                           ]
+        ], trees)
+
+
