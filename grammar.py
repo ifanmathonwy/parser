@@ -30,6 +30,7 @@ class Grammar:
 
     TODO: Initialize from BNF.
     TODO: Initialize from arrow format.
+    TODO: Abstract away terminal/preterminal distinction by providing lexicon/POS method.
     """
 
     def __init__(self):
@@ -37,6 +38,10 @@ class Grammar:
 
     def add_rule(self, rule):
         self._grammar.append(rule)
+
+    @classmethod
+    def from_csv(cls, path):
+        raise NotImplementedError('Creating a Grammar from CSV is not yet implemented.')
 
     def __iter__(self):
         return iter(self._grammar)
