@@ -1,5 +1,5 @@
 import unittest
-import earley_parser as psr
+import parser as psr
 import grammar as gmr
 
 
