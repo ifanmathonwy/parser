@@ -1,19 +1,20 @@
 import unittest
-import parser as psr
+import earley_parser as psr
+import grammar as gmr
 
 
 class TestState(unittest.TestCase):
 
     def test_incomplete(self):
         # Complete case.
-        incomplete_state = psr.State(rule=psr.Rule('S', ['VP']),
+        incomplete_state = psr.State(rule=gmr.Rule('S', ['VP']),
                                      span_start=0,
                                      span_stop=0,
                                      dot_position=0)
         self.assertTrue(incomplete_state.incomplete)
 
         # Incomplete case.
-        complete_state = psr.State(rule=psr.Rule('S', ['VP']),
+        complete_state = psr.State(rule=gmr.Rule('S', ['VP']),
                                    span_start=0,
                                    span_stop=0,
                                    dot_position=1)
@@ -21,14 +22,14 @@ class TestState(unittest.TestCase):
 
     def test_next_category(self):
         # Complete case.
-        state = psr.State(rule=psr.Rule('S', ['VP']),
+        state = psr.State(rule=gmr.Rule('S', ['VP']),
                           span_start=0,
                           span_stop=0,
                           dot_position=0)
         self.assertEqual(state.next_category, 'VP')
 
         # Incomplete case.
-        state = psr.State(rule=psr.Rule('S', ['VP']),
+        state = psr.State(rule=gmr.Rule('S', ['VP']),
                           span_start=0,
                           span_stop=1,
                           dot_position=1)
@@ -39,12 +40,12 @@ class TestEarleyParser(unittest.TestCase):
 
     def test_parse(self):
         grammar = [
-            psr.Rule('S', ['VP']),
-            psr.Rule('VP', ['V', 'NP']),
-            psr.Rule('NP', ['Det', 'Nominal']),
-            psr.Rule('Det', ['that'], preterminal=True),
-            psr.Rule('Nominal', ['flight'], preterminal=True),
-            psr.Rule('V', ['Book'], preterminal=True)
+            gmr.Rule('S', ['VP']),
+            gmr.Rule('VP', ['V', 'NP']),
+            gmr.Rule('NP', ['Det', 'Nominal']),
+            gmr.Rule('Det', ['that'], preterminal=True),
+            gmr.Rule('Nominal', ['flight'], preterminal=True),
+            gmr.Rule('V', ['Book'], preterminal=True)
         ]
 
         words = ['Book', 'that', 'flight']
@@ -57,13 +58,13 @@ class TestEarleyParser(unittest.TestCase):
 
     def test_multiple_parses(self):
         grammar = [
-            psr.Rule('N', ['I'], preterminal=True),
-            psr.Rule('V', ['made'], preterminal=True),
-            psr.Rule('N', ['her'], preterminal=True),
-            psr.Rule('V', ['duck'], preterminal=True),
-            psr.Rule('N', ['duck'], preterminal=True),
-            psr.Rule('S', ['N', 'V', 'N', 'V']),
-            psr.Rule('S', ['N', 'V', 'N', 'N'])
+            gmr.Rule('N', ['I'], preterminal=True),
+            gmr.Rule('V', ['made'], preterminal=True),
+            gmr.Rule('N', ['her'], preterminal=True),
+            gmr.Rule('V', ['duck'], preterminal=True),
+            gmr.Rule('N', ['duck'], preterminal=True),
+            gmr.Rule('S', ['N', 'V', 'N', 'V']),
+            gmr.Rule('S', ['N', 'V', 'N', 'N'])
         ]
         words = ['I', 'made', 'her', 'duck']
         parser = psr.EarleyParser(grammar)
@@ -76,19 +77,19 @@ class TestEarleyParser(unittest.TestCase):
 
     def test_ambiguity(self):
         grammar = [
-            psr.Rule('S', ['NP', 'VP']),
-            psr.Rule('NP', ['Det', 'Nominal']),
-            psr.Rule('NP', ['Det', 'Nominal', 'PP']),
-            psr.Rule('NP', ['Nominal']),
-            psr.Rule('VP', ['VP', 'PP']),
-            psr.Rule('VP', ['V', 'NP']),
-            psr.Rule('PP', ['Prep', 'NP']),
-            psr.Rule('Det', ['a'], preterminal=True),
-            psr.Rule('Nominal', ['I'], preterminal=True),
-            psr.Rule('Nominal', ['man'], preterminal=True),
-            psr.Rule('Nominal', ['telescope'], preterminal=True),
-            psr.Rule('V', ['saw'], preterminal=True),
-            psr.Rule('Prep', ['with'], preterminal=True)
+            gmr.Rule('S', ['NP', 'VP']),
+            gmr.Rule('NP', ['Det', 'Nominal']),
+            gmr.Rule('NP', ['Det', 'Nominal', 'PP']),
+            gmr.Rule('NP', ['Nominal']),
+            gmr.Rule('VP', ['VP', 'PP']),
+            gmr.Rule('VP', ['V', 'NP']),
+            gmr.Rule('PP', ['Prep', 'NP']),
+            gmr.Rule('Det', ['a'], preterminal=True),
+            gmr.Rule('Nominal', ['I'], preterminal=True),
+            gmr.Rule('Nominal', ['man'], preterminal=True),
+            gmr.Rule('Nominal', ['telescope'], preterminal=True),
+            gmr.Rule('V', ['saw'], preterminal=True),
+            gmr.Rule('Prep', ['with'], preterminal=True)
         ]
         words = ['I', 'saw', 'a', 'man', 'with', 'a', 'telescope']
         parser = psr.EarleyParser(grammar)
@@ -114,7 +115,7 @@ class TestEarleyParser(unittest.TestCase):
 
     def test_no_parses(self):
         grammar = [
-            psr.Rule('N', ['Nothing'], preterminal=True)
+            gmr.Rule('N', ['Nothing'], preterminal=True)
         ]
         words = ['Something']
         parser = psr.EarleyParser(grammar)
@@ -132,7 +133,7 @@ class TestEarleyParser(unittest.TestCase):
 
     def test_empty_words(self):
         grammar = [
-            psr.Rule('N', ['Nothing'], preterminal=True)
+            gmr.Rule('N', ['Nothing'], preterminal=True)
         ]
         words = []
         parser = psr.EarleyParser(grammar)

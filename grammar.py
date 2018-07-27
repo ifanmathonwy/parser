@@ -1,4 +1,7 @@
-"""Grammars and rules."""
+"""Grammars and rules.
+
+TODO: Disallow GAMMA in user-defined rules.
+"""
 
 class Rule:
     """A rule in a context-free grammar."""
@@ -21,3 +24,22 @@ class Rule:
     def __repr__(self):
         # TODO change to proper repr when done debugging.
         return '{} -> {}'.format(self.lhs, ' '.join(self.rhs))
+
+class Grammar:
+    """A container for Rules with methods to construct from various sources.
+
+    TODO: Initialize from BNF.
+    TODO: Initialize from arrow format.
+    """
+
+    def __init__(self):
+        self._grammar = []
+
+    def add_rule(self, rule):
+        self._grammar.append(rule)
+
+    def __iter__(self):
+        return iter(self._grammar)
+
+    def __contains__(self, item):
+        return item in self._grammar
