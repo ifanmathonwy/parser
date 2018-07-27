@@ -1,13 +1,30 @@
 """A library implementing the Earley parser.
 
-TODO: Incomplete to complete (positive condition)
-TODO: Load grammar from standardized file.
-TODO: Print tree.
-TODO: Create a Grammar class to encapsulate both Rules and the distinguished symbol.
-TODO: CKY (move the earley-specific stuff to a separate file).
+The Earley parser parses strings from a given context-free language.
 
-Currently implements the Earley parser.
-Heavily based on Jurafsky and Martin. Great book."""
+Example usage:
+  from parser.earley_parser import EarleyParser
+  from parser.grammar import Grammar, Rule
+
+  grammar = Grammar(
+      Rule('S', ['VP']),
+      Rule('VP', ['V', 'NP']),
+      Rule('NP', ['Det', 'Nominal']),
+      Rule('Det', ['that'], preterminal=True),
+      Rule('Nominal', ['flight'], preterminal=True),
+      Rule('V', ['Book'], preterminal=True)
+  )
+
+  my_parser = EarleyParser(grammar)
+
+  words = ['Book', 'that', 'flight']
+
+  parses = my_parser.parse(words)
+
+This implementation is based on the description of the algorithm given in
+'Speech and Language Processing, 2nd Edition' by D. Jurafsky and
+J. H. Martin (2009).
+"""
 
 from grammar import Rule
 
@@ -56,6 +73,9 @@ class State:
             return ''
 
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
         return (self.rule == other.rule and
                 self.span_start == other.span_start and
                 self.span_stop == other.span_stop and
@@ -159,7 +179,8 @@ class EarleyAlgorithm:
     def _complete(self, state, chart):
         """Given completed state, updates all rules in the grammar awaiting its completion."""
         for candidate_state in chart[state.span_start]:
-            if (candidate_state.next_category == state.rule.lhs) and (candidate_state.span_stop == state.span_start):
+            if ((candidate_state.next_category == state.rule.lhs) and
+                    (candidate_state.span_stop == state.span_start)):
                 chart.enqueue(
                     State(
                         rule=candidate_state.rule,
@@ -218,9 +239,6 @@ class EarleyAlgorithm:
         return [self._tree_from_parse(p)[1] for p in self._full_parses(chart)]
 
 
-# Decouple the algorithms from the public parser objects.
-# Allow initializing parser from a file.
-# Have a parser class which either does Earley or CKY depending on what you ask.
 class EarleyParser:
     """An Earley parser."""
 
@@ -235,6 +253,8 @@ class EarleyParser:
 
     def parse(self, words):
         """Parses a sequence of words.
+
+        TODO: Choose output format here.
 
         Args:
             words (list<string>): The sequence of words to be parsed.

@@ -1,7 +1,4 @@
-"""Grammars and rules.
-
-TODO: Disallow GAMMA in user-defined rules.
-"""
+"""Grammars and rules."""
 
 class Rule:
     """A rule in a context-free grammar."""
@@ -25,6 +22,17 @@ class Rule:
         # TODO change to proper repr when done debugging.
         return '{} -> {}'.format(self.lhs, ' '.join(self.rhs))
 
+    def __eq__(self, other):
+        if not isinstance(other, self__class__):
+            return False
+
+        return (self.lhs == other.lhs and
+                self.rhs == other.rhs and
+                self.preterminal == other.preterminal)
+
+    def __ne__(self, other):
+        return not self.__class__.__eq__(self, other)
+
 class Grammar:
     """A container for Rules with methods to construct from various sources.
 
@@ -33,18 +41,28 @@ class Grammar:
     TODO: Abstract away terminal/preterminal distinction by providing lexicon/POS method.
     """
 
-    def __init__(self):
+    def __init__(self, *rules, distinguished_symbol='S'):
         self._grammar = []
+        self._distinguished_symbol = distinguished_symbol
+        for rule in rules:
+            self._grammar.append(rule)
 
     def add_rule(self, rule):
         self._grammar.append(rule)
 
     @classmethod
-    def from_csv(cls, path):
-        raise NotImplementedError('Creating a Grammar from CSV is not yet implemented.')
+    def from_tsv(cls, path):
+        raise NotImplementedError('Creating a Grammar from TSV is not yet implemented.')
 
     def __iter__(self):
         return iter(self._grammar)
 
     def __contains__(self, item):
         return item in self._grammar
+
+    def __len__(self):
+        return len(self._grammar)
+
+    @property
+    def distinguished_symbol(self):
+        return self._distinguished_symbol
