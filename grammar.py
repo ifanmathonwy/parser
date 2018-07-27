@@ -6,7 +6,7 @@ import re
 class Rule:
     """A rule in a context-free grammar."""
 
-    def __init__(self, lhs, rhs, preterminal=False, probability=1.0):
+    def __init__(self, lhs, rhs, preterminal=False):
         """Initializer for the Rule class.
 
         Args:
@@ -20,7 +20,6 @@ class Rule:
         self.lhs = lhs
         self.rhs = rhs
         self.preterminal = preterminal
-        self.probability = probability
 
     def __repr__(self):
         # TODO change to proper repr when done debugging.
@@ -72,7 +71,7 @@ class Grammar:
         return self._distinguished_symbol
 
 class Regex:
-    "A regex which can function as a matcher for a rhs preterminal label."
+    """A regex which can function as a matcher for a rhs preterminal label."""
 
     def __init__(self, regex):
         self._regex = re.compile(regex)

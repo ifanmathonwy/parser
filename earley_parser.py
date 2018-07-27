@@ -25,7 +25,6 @@ This implementation is based on the description of the algorithm given in
 'Speech and Language Processing, 2nd Edition' by D. Jurafsky and
 J. H. Martin (2009).
 
-TODO: Allow specifying a regex for terminals.
 """
 
 from grammar import Rule
@@ -237,20 +236,6 @@ class EarleyAlgorithm:
                     self._complete(state, chart)
 
         return [self._tree_from_parse(p, chart)[1] for p in self._full_parses(chart)]
-
-
-# class ProbabilisticEarleyAlgorithm(EarleyAlgorithm):
-#
-#     def _tree_from_parse(self, state):
-#         if state.rule.preterminal:
-#             return (state.rule.probability, [state.rule.lhs, ''.join(state.rule.rhs)])
-#         probability = 1.0
-#         tree = []
-#         tree.append(state.rule.lhs)
-#         for contributor in sorted(state.previous_states, key=lambda s: s.span_start):
-#             probability *= contributor.rule.probability
-#             tree.append(self._tree_from_parse(contributor)[1])
-#         return (probability, tree)
 
 
 class EarleyParser:

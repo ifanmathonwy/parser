@@ -26,14 +26,14 @@ class TestState(unittest.TestCase):
                           span_start=0,
                           span_stop=0,
                           dot_position=0)
-        self.assertEqual(state.next_category, 'VP')
+        self.assertEqual('VP', state.next_category)
 
         # Incomplete case.
         state = psr.State(rule=gmr.Rule('S', ['VP']),
                           span_start=0,
                           span_stop=1,
                           dot_position=1)
-        self.assertEqual(state.next_category, '')
+        self.assertEqual('', state.next_category)
 
 
 class TestEarleyParser(unittest.TestCase):
@@ -53,8 +53,8 @@ class TestEarleyParser(unittest.TestCase):
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
 
-        self.assertEqual(trees,
-                         [['S', ['VP', ['V', 'Book'], ['NP', ['Det', 'that'], ['Nominal', 'flight']]]]])
+        self.assertEqual([['S', ['VP', ['V', 'Book'], ['NP', ['Det', 'that'], ['Nominal', 'flight']]]]],
+                         trees)
 
     def test_multiple_parses(self):
         grammar = gmr.Grammar(
@@ -69,11 +69,11 @@ class TestEarleyParser(unittest.TestCase):
         words = ['I', 'made', 'her', 'duck']
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
-        self.assertEqual(len(trees), 2)
-        self.assertEqual(trees, [
+        self.assertEqual(2, len(trees))
+        self.assertEqual([
             ['S', ['N', 'I'], ['V', 'made'], ['N', 'her'], ['V', 'duck']],
             ['S', ['N', 'I'], ['V', 'made'], ['N', 'her'], ['N', 'duck']]
-        ])
+        ], trees)
 
     def test_ambiguity(self):
         grammar = gmr.Grammar(
@@ -94,8 +94,8 @@ class TestEarleyParser(unittest.TestCase):
         words = ['I', 'saw', 'a', 'man', 'with', 'a', 'telescope']
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
-        self.assertEqual(len(trees), 2)
-        self.assertEqual(trees, [
+        self.assertEqual(2, len(trees))
+        self.assertEqual([
             # ... saw ... with a telescope
             ['S', ['NP', ['Nominal', 'I']],
                   ['VP', ['VP', ['V', 'saw'], ['NP', ['Det', 'a'], ['Nominal', 'man']]],
@@ -111,7 +111,7 @@ class TestEarleyParser(unittest.TestCase):
                          ]
                   ]
             ]
-        ])
+        ], trees)
 
     def test_no_parses(self):
         grammar = gmr.Grammar(
@@ -120,16 +120,16 @@ class TestEarleyParser(unittest.TestCase):
         words = ['Something']
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
-        self.assertEqual(len(trees), 0)
-        self.assertEqual(trees, [])
+        self.assertEqual(0, len(trees))
+        self.assertEqual([], trees)
 
     def test_empty_grammar(self):
         grammar = gmr.Grammar()
         words = ['Something']
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
-        self.assertEqual(len(trees), 0)
-        self.assertEqual(trees, [])
+        self.assertEqual(0, len(trees))
+        self.assertEqual([], trees)
 
     def test_empty_words(self):
         grammar = gmr.Grammar(
@@ -138,8 +138,8 @@ class TestEarleyParser(unittest.TestCase):
         words = []
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
-        self.assertEqual(len(trees), 0)
-        self.assertEqual(trees, [])
+        self.assertEqual(0, len(trees))
+        self.assertEqual([], trees)
 
     def test_regex_rule(self):
         grammar = gmr.Grammar(
