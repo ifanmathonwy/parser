@@ -135,15 +135,13 @@ class EarleyChart:
 class EarleyAlgorithm:
     """The Earley algorithm."""
 
-    def __init__(self, grammar, distinguished_symbol='S'):
+    def __init__(self, grammar):
         """Initializer for the EarleyAlgorithm class.
 
         Args:
-            grammar (list<Rule>): A list of grammar Rules to be used to parse
-                inputs.
+            grammar (Grammar): The Grammar to be used to parse inputs.
         """
         self._grammar = grammar
-        self._distinguished_symbol = distinguished_symbol
 
     def _grammar_rules_for(self, lhs):
         for rule in self._grammar:
@@ -221,7 +219,7 @@ class EarleyAlgorithm:
         chart = EarleyChart(words)
         chart.enqueue(
             State(
-                rule=Rule(_GAMMA, [self._distinguished_symbol]),
+                rule=Rule(_GAMMA, [self._grammar.distinguished_symbol]),
                 span_start=0,
                 span_stop=0,
                 dot_position=0
@@ -242,19 +240,18 @@ class EarleyAlgorithm:
 class EarleyParser:
     """An Earley parser."""
 
-    def __init__(self, grammar, distinguished_symbol='S'):
+    def __init__(self, grammar):
         """Initializer for the EarleyParser class.
 
         Args:
-            grammar (list<Rule>): A list of grammar Rules to be used to parse
-                inputs.
+            grammar (Grammar): The Grammar to be used to parse inputs.
         """
-        self._algorithm = EarleyAlgorithm(grammar, distinguished_symbol)
+        self._algorithm = EarleyAlgorithm(grammar)
 
     def parse(self, words):
         """Parses a sequence of words.
 
-        TODO: Choose output format here.
+        TODO: Choose output format here? GraphViz? Tree library?
 
         Args:
             words (list<string>): The sequence of words to be parsed.

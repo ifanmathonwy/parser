@@ -39,14 +39,14 @@ class TestState(unittest.TestCase):
 class TestEarleyParser(unittest.TestCase):
 
     def test_parse(self):
-        grammar = [
+        grammar = gmr.Grammar(
             gmr.Rule('S', ['VP']),
             gmr.Rule('VP', ['V', 'NP']),
             gmr.Rule('NP', ['Det', 'Nominal']),
             gmr.Rule('Det', ['that'], preterminal=True),
             gmr.Rule('Nominal', ['flight'], preterminal=True),
             gmr.Rule('V', ['Book'], preterminal=True)
-        ]
+        )
 
         words = ['Book', 'that', 'flight']
 
@@ -57,7 +57,7 @@ class TestEarleyParser(unittest.TestCase):
                          [['S', ['VP', ['V', 'Book'], ['NP', ['Det', 'that'], ['Nominal', 'flight']]]]])
 
     def test_multiple_parses(self):
-        grammar = [
+        grammar = gmr.Grammar(
             gmr.Rule('N', ['I'], preterminal=True),
             gmr.Rule('V', ['made'], preterminal=True),
             gmr.Rule('N', ['her'], preterminal=True),
@@ -65,7 +65,7 @@ class TestEarleyParser(unittest.TestCase):
             gmr.Rule('N', ['duck'], preterminal=True),
             gmr.Rule('S', ['N', 'V', 'N', 'V']),
             gmr.Rule('S', ['N', 'V', 'N', 'N'])
-        ]
+        )
         words = ['I', 'made', 'her', 'duck']
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
@@ -76,7 +76,7 @@ class TestEarleyParser(unittest.TestCase):
         ])
 
     def test_ambiguity(self):
-        grammar = [
+        grammar = gmr.Grammar(
             gmr.Rule('S', ['NP', 'VP']),
             gmr.Rule('NP', ['Det', 'Nominal']),
             gmr.Rule('NP', ['Det', 'Nominal', 'PP']),
@@ -90,7 +90,7 @@ class TestEarleyParser(unittest.TestCase):
             gmr.Rule('Nominal', ['telescope'], preterminal=True),
             gmr.Rule('V', ['saw'], preterminal=True),
             gmr.Rule('Prep', ['with'], preterminal=True)
-        ]
+        )
         words = ['I', 'saw', 'a', 'man', 'with', 'a', 'telescope']
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
@@ -114,9 +114,9 @@ class TestEarleyParser(unittest.TestCase):
         ])
 
     def test_no_parses(self):
-        grammar = [
+        grammar = gmr.Grammar(
             gmr.Rule('N', ['Nothing'], preterminal=True)
-        ]
+        )
         words = ['Something']
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
@@ -124,7 +124,7 @@ class TestEarleyParser(unittest.TestCase):
         self.assertEqual(trees, [])
 
     def test_empty_grammar(self):
-        grammar = []
+        grammar = gmr.Grammar()
         words = ['Something']
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)
@@ -132,9 +132,9 @@ class TestEarleyParser(unittest.TestCase):
         self.assertEqual(trees, [])
 
     def test_empty_words(self):
-        grammar = [
+        grammar = gmr.Grammar(
             gmr.Rule('N', ['Nothing'], preterminal=True)
-        ]
+        )
         words = []
         parser = psr.EarleyParser(grammar)
         trees = parser.parse(words)

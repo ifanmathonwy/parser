@@ -23,7 +23,7 @@ class Rule:
         return '{} -> {}'.format(self.lhs, ' '.join(self.rhs))
 
     def __eq__(self, other):
-        if not isinstance(other, self__class__):
+        if not isinstance(other, self.__class__):
             return False
 
         return (self.lhs == other.lhs and

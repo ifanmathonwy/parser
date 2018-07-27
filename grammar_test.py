@@ -2,6 +2,15 @@ import unittest
 
 import grammar as gmr
 
+class TestRule(unittest.TestCase):
+
+    def test_equality(self):
+        first_rule = gmr.Rule('S', ['NP', 'VP'])
+        second_rule = gmr.Rule('S', ['NP', 'VP'])
+        third_rule = gmr.Rule('S', ['VP', 'NP'])
+        self.assertEqual(first_rule, second_rule)
+        self.assertNotEqual(first_rule, third_rule)
+
 class TestGrammar(unittest.TestCase):
 
     def test_initializer(self):
