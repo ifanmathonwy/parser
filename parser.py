@@ -3,7 +3,7 @@
 The Earley parser parses strings from a given context-free language.
 
 Example usage:
-  from parser.earley_parser import EarleyParser
+  from parser.parser import EarleyParser
   from parser.grammar import Grammar, Rule
 
   grammar = Grammar(

@@ -2,7 +2,6 @@
 
 import re
 
-
 class Rule:
     """A rule in a context-free grammar."""
 
